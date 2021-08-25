@@ -1,4 +1,5 @@
 import argparse
+import json
 import os
 import sys
 
@@ -14,6 +15,34 @@ def commandline_parser():
     return parser
 
 
+def get_file_data():
+    print('Input Filename (without extension)')
+    filename = input()
+    data = FileServiceNoClass.get_file_data(filename)
+    return data
+
+
+def create_file():
+    print('Input content')
+    content = input()
+    data = FileServiceNoClass.create_file(content)
+    return data
+
+
+def delete_file():
+    print('Input Filename (without extension)')
+    filename = input()
+    data = FileServiceNoClass.delete_file(filename)
+    return data
+
+
+def change_dir():
+    print('Input new working directory path:')
+    new_path = input()
+    data = FileServiceNoClass.change_dir(new_path)
+    return 'Working directory Successfully changed. New path is {}'.format(new_path)
+
+
 def main():
     parser = commandline_parser()
     namespace = parser.parse_args(sys.argv[1:])
@@ -21,6 +50,44 @@ def main():
     print(os.getcwd())
     FileServiceNoClass.change_dir(path)
     print(os.getcwd())
+
+    print("Commands:")
+    print("list - get file list")
+    print("get - get file data")
+    print("create - create file")
+    print("delete - delete file")
+    print("chdir - change working directory")
+    print("exit - exit from app")
+
+    while True:
+        try:
+            print("Input command:")
+            command = input()
+
+            if command == 'list':
+                data = FileServiceNoClass.get_files()
+
+            elif command == 'get':
+                data = get_file_data()
+
+            elif command == 'create':
+                data = create_file()
+
+            elif command == 'delete':
+                data = delete_file()
+
+            elif command == 'chdir':
+                data = change_dir()
+
+            elif command == 'exit':
+                return
+            else:
+                raise ValueError('Invalid Command')
+
+            print('\n{}\n'.format({'status': 'success', 'result': json.dumps(data)}))
+        except (ValueError, AssertionError) as err:
+            print('\n {}\n'.format({'status': 'error',
+                                    'message': err.message if sys.version_info[0] < 3 else err}))
 
 
 if __name__ == '__main__':
