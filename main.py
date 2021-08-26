@@ -60,7 +60,7 @@ def main():
     parser = commandline_parser()
     namespace = parser.parse_args(sys.argv[1:])
     path = namespace.folder
-    FileServiceNoClass.change_dir('sample')
+    FileServiceNoClass.change_dir(path)
 
     print('Commands:')
     print('list - get files list')
