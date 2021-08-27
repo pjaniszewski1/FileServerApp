@@ -81,6 +81,52 @@ class TestSuite:
 
         logger.info('Test passed')
 
+    def test_get_file_info(self, prepare_data):
+        test_file_part = test_file_4.split('.')[0]
+
+        data = FileServerNoClass.get_file_data(test_file_part)
+        filename = data.get('name')
+
+        assert os.path.exists('{}/{}'.format(test_folder, filename))
+        assert filename == test_file_4
+
+        logger.info('Test passed')
+
+    def test_create_file_with_content(self, prepare_data):
+        logger.info('Test request. Content is not empty')
+
+        data = FileServerNoClass.create_file(test_content)
+        filename = data.get('name')
+
+        assert os.path.exists('{}/{}'.format(test_folder, filename))
+
+        logger.info('Test passed')
+
+    def test_create_file_without_content(self, prepare_data):
+        logger.info('Test request. Content is empty')
+
+        data = FileServerNoClass.create_file()
+        filename = data.get('name')
+
+        assert os.path.exists('{}/{}'.format(test_folder, filename))
+
+        logger.info('Test passed')
+
+    def test_delete_file(self, prepare_data):
+        test_file_path = test_file_2.split('.')[0]
+
+        FileServerNoClass.delete_file(test_file_path)
+
+        assert not os.path.exists('{}/{}'.format(test_folder, test_file_2))
+
+        logger.info('Test passed')
+
+    def test_change_file_dir(self, prepare_data):
+        new_test_folder = '../test_folder'
+
+        FileServerNoClass.change_dir(new_test_folder)
+        logger.info('Test passed')
+
 
 
 
