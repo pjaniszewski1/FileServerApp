@@ -3,7 +3,7 @@ import os
 import sys
 import json
 
-import server.file_service_no_class as FileServiceNoClass
+from server.file_service import FileService, FileServiceSigned
 
 
 def commandline_parser():
@@ -19,39 +19,58 @@ def commandline_parser():
     return parser
 
 
-def get_file_data():
+def get_file_data(cwd):
+    # type (str) -> dict
     print('Input filename (without extension):')
     filename = input()
 
-    data = FileServiceNoClass.get_file_data(filename)
+    print('Check sign? y/n:')
+    is_signed = input()
+
+    if is_signed == 'y':
+        data = FileServiceSigned(path=cwd).get_file_data(filename)
+    elif is_signed == 'n':
+        data = FileService(path=cwd).get_file_data(filename)
+    else:
+        raise ValueError('Invalid value')
 
     return data
 
 
-def create_file():
+def create_file(cwd):
+    # type (str) -> dict
     print('Input content:')
     content = input()
 
-    data = FileServiceNoClass.create_file(content)
+    print('Sign file? y/n:')
+    is_signed = input()
+
+    if is_signed == 'y':
+        data = FileServiceSigned(path=cwd).create_file(content)
+    elif is_signed == 'n':
+        data = FileService(path=cwd).create_file(content)
+    else:
+        raise ValueError('Invalid value')
 
     return data
 
 
-def delete_file():
+def delete_file(cwd):
+    # type (str) -> dict
     print('Input filename (without extension)')
 
     filename = input()
 
-    data = FileServiceNoClass.delete_file(filename)
+    data = FileService(path=cwd).delete_file(filename)
 
     return data
 
 
-def change_dir():
+def change_dir(cwd):
     print('Input new working directory path:')
     new_path = input()
 
-    FileServiceNoClass.change_dir(new_path)
+    FileService(path=cwd).change_dir(new_path)
 
     return 'Working directory is successfully changed. New path is {}'.format(new_path)
 
@@ -60,7 +79,7 @@ def main():
     parser = commandline_parser()
     namespace = parser.parse_args(sys.argv[1:])
     path = namespace.folder
-    FileServiceNoClass.change_dir(path)
+    FileService(path=path).change_dir(path)
 
     print('Commands:')
     print('list - get files list')
@@ -76,19 +95,19 @@ def main():
             command = input()
 
             if command == 'list':
-                data = FileServiceNoClass.get_files()
+                data = FileService(path=path).get_files()
 
             elif command == 'get':
-                data = get_file_data()
+                data = get_file_data(path)
 
             elif command == 'create':
-                data = create_file()
+                data = create_file(path)
 
             elif command == 'delete':
-                data = delete_file()
+                data = delete_file(path)
 
             elif command == 'chdir':
-                data = change_dir()
+                data = change_dir(path)
 
             elif command == 'exit':
                 return
