@@ -44,7 +44,7 @@ def get_file_data(filename):
                 }
 
 
-def create_file(content):
+def create_file(content=''):
     path = os.getcwd()
     filename = '{}.{}'.format(utils.generate_string(), extension)
     full_filename = '{}/{}'.format(path, filename)
