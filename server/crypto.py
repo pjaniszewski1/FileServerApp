@@ -51,7 +51,7 @@ class BaseCipher(object):
 
 class AESCipher(BaseCipher):
 
-    def __init(self, file_folder):
+    def __init__(self, file_folder):
         # type (str) -> None
         super(BaseCipher, self).__init__()
         self.file_folder = file_folder
@@ -90,7 +90,7 @@ class AESCipher(BaseCipher):
         session_key_file = '{}/{}.bin'.format(self.file_folder, filename)
 
         if not os.path.exists(session_key_file):
-            with open(session_key, 'wb') as f:
+            with open(session_key_file, 'wb') as f:
                 f.write(session_key)
 
         out_file.write(nonce)
@@ -98,3 +98,61 @@ class AESCipher(BaseCipher):
         out_file.write(cipher_text)
 
 
+class RSACipher(AESCipher):
+    code = os.environ['CRYPTO_CODE']
+    key_protection = 'scryptAndAES128-CBC'
+
+    def __init__(self, file_folder):
+        # type (str) -> None
+        super(RSACipher, self).__init__(file_folder)
+        key = RSA.generate(2048)
+
+        encrypted_key = key.export_key(passphrase=self.code, pkcs=8, protection=self.key_protection)
+
+        self.private_key_file = '{}/private_rsa_key.bin'.format(key_folder)
+        self.public_key_file = '{}/public_rsa_key.pem'.format(key_folder)
+
+        if not os.path.exists(self.private_key_file):
+            with open(self.private_key_file, 'wb') as f:
+                f.write(encrypted_key)
+
+        if not os.path.exists(self.public_key_file):
+            with open(self.public_key_file, 'wb') as f:
+                f.write(key.publickey().exportKey())
+
+    def encrypt(self, data):
+        # type (bytes) -> tuple
+        cipher_text, tag, nonce, session_key = super(RSACipher, self).encrypt(data)
+
+        public_key = RSA.import_key(open(self.public_key_file).read())
+        cipher_rsa = PKCS1_OAEP.new(public_key)
+        enc_session_key = cipher_rsa.encrypt(session_key)
+
+        return cipher_text, tag, nonce, enc_session_key
+
+    def decrypt(self, input_file, filename):
+        # type (BinaryIO, str) -> bytes
+
+        private_key = RSA.import_key(open(self.private_key_file).read(), passphrase=self.code)
+        nonce, tag, cipher_text = [input_file.read(x) for x in (16, 16, -1)]
+        cipher_rsa = PKCS1_OAEP.new(private_key)
+        session_key_file = '{}/{}.bin'.format(self.file_folder, filename)
+
+        enc_session_key = open(session_key_file, 'rb').read()
+        session_key = cipher_rsa.decrypt(enc_session_key)
+
+        return self.decrypt_aes_data(cipher_text, tag, nonce, session_key)
+
+    def write_cipher_text(self, data, out_file, filename):
+        # type (bytes, BinaryIO, str) -> None
+
+        cipher_text, tag, nonce, session_key = self.encrypt(data)
+        session_key_file = '{}/{}.bin'.format(self.file_folder, filename)
+
+        if not os.path.exists(session_key_file):
+            with open(session_key_file, 'wb') as f:
+                f.write(session_key)
+
+        out_file.write(nonce)
+        out_file.write(tag)
+        out_file.write(cipher_text)

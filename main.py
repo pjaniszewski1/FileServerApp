@@ -42,13 +42,18 @@ def create_file(cwd):
     print('Input content:')
     content = input()
 
+    print('Input security level (low, medium, high):')
+    security_level = input()
+
+    assert security_level in ['low', 'medium', 'high'], 'Invalid security level'
+
     print('Sign file? y/n:')
     is_signed = input()
 
     if is_signed == 'y':
-        data = FileServiceSigned(path=cwd).create_file(content)
+        data = FileServiceSigned(path=cwd).create_file(content, security_level)
     elif is_signed == 'n':
-        data = FileService(path=cwd).create_file(content)
+        data = FileService(path=cwd).create_file(content, security_level)
     else:
         raise ValueError('Invalid value')
 
@@ -79,7 +84,6 @@ def main():
     parser = commandline_parser()
     namespace = parser.parse_args(sys.argv[1:])
     path = namespace.folder
-    FileService(path=path).change_dir(path)
 
     print('Commands:')
     print('list - get files list')
