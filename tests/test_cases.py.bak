@@ -1,6 +1,3 @@
-from builtins import bytes
-from builtins import str
-from builtins import object
 from collections import OrderedDict
 
 import pytest
@@ -47,27 +44,27 @@ def create_test_files():
 
     full_test_file1 = '{}\{}'.format(test_folder, test_file_1)
     with open(full_test_file1, 'wb') as file_handler:
-        data = bytes(test_content, 'utf-8')
+        data = bytes(test_content)
         file_handler.write(data)
 
     full_test_file2 = '{}\{}'.format(test_folder, test_file_2)
     with open(full_test_file2, 'wb') as file_handler:
-        data = bytes(test_content, 'utf-8')
+        data = bytes(test_content)
         file_handler.write(data)
 
     full_test_file3 = '{}\{}'.format(test_folder, test_file_3)
     with open(full_test_file3, 'wb') as file_handler:
-        data = bytes(test_content, 'utf-8')
+        data = bytes(test_content)
         file_handler.write(data)
 
     full_test_file4 = '{}\{}'.format(test_folder, test_file_4)
     with open(full_test_file4, 'wb') as file_handler:
-        data = bytes(test_content, 'utf-8')
+        data = bytes(test_content)
         file_handler.write(data)
 
     full_test_file5 = '{}\{}'.format(test_folder, test_file_5)
     with open(full_test_file5, 'wb') as file_handler:
-        data = bytes(test_content, 'utf-8')
+        data = bytes(test_content)
         file_handler.write(data)
 
 
@@ -87,7 +84,7 @@ def prepare_data(request):
     full_test_signature_file_4 = '{}/{}'.format(test_folder, test_signature_file_4)
     signature = HashAPI.hash_md5('_'.join(list(str(x) for x in list(file_dict_4.values()))))
     with open(full_test_signature_file_4, 'wb') as file_handler:
-        data = bytes(signature, 'utf-8')
+        data = bytes(signature)
         file_handler.write(data)
 
     # file5
@@ -101,14 +98,14 @@ def prepare_data(request):
     full_test_signature_file_5 = '{}/{}'.format(test_folder, test_signature_file_5)
     signature = HashAPI.hash_md5('_'.join(list(str(x) for x in list(file_dict_5.values()))))
     with open(full_test_signature_file_5, 'wb') as file_handler:
-        data = bytes(signature, 'utf-8')
+        data = bytes(signature)
         file_handler.write(data)
 
     # file6
     cipher = AESCipher(test_folder)
     full_test_file_6 = '{}\{}'.format(test_folder, test_file_6)
     with open(full_test_file_6, 'wb') as file_handler:
-        data = bytes(test_content, 'utf-8')
+        data = bytes(test_content)
         cipher.write_cipher_text(data, file_handler, test_file_6.split('.')[0])
 
     file_dict_6 = OrderedDict(
@@ -120,14 +117,14 @@ def prepare_data(request):
     full_test_signature_file_6 = '{}/{}'.format(test_folder, test_signature_file_6)
     signature = HashAPI.hash_md5('_'.join(list(str(x) for x in list(file_dict_6.values()))))
     with open(full_test_signature_file_6, 'wb') as file_handler:
-        data = bytes(signature, 'utf-8')
+        data = bytes(signature)
         file_handler.write(data)
 
     #file7
     cipher = RSACipher(test_folder)
     full_test_file_7 = '{}\{}'.format(test_folder, test_file_7)
     with open(full_test_file_7, 'wb') as file_handler:
-        data = bytes(test_content, 'utf-8')
+        data = bytes(test_content)
         cipher.write_cipher_text(data, file_handler, test_file_7.split('.')[0])
 
     file_dict_7 = OrderedDict(
@@ -139,7 +136,7 @@ def prepare_data(request):
     full_test_signature_file_7 = '{}/{}'.format(test_folder, test_signature_file_7)
     signature = HashAPI.hash_md5('_'.join(list(str(x) for x in list(file_dict_7.values()))))
     with open(full_test_signature_file_7, 'wb') as file_handler:
-        data = bytes(signature, 'utf-8')
+        data = bytes(signature)
         file_handler.write(data)
 
     request.addfinalizer(teardown)
@@ -157,12 +154,15 @@ def teardown():
         os.remove(test_key_file_7)
 
 
-class TestSuite(object):
+class TestSuite:
     def test_get_files(self, prepare_data):
         logger.info('Test request')
         data = FileServerNoClass.get_files()
-        exists_files = list([file for file in data if file.get('name') in [test_file_1, test_file_2, test_file_3, test_file_4, test_file_5, test_file_6, test_file_7]])
-        exists_files = list([file.get('name') for file in exists_files])
+        exists_files = list(filter(
+            lambda file: file.get('name') in [test_file_1, test_file_2, test_file_3, test_file_4, test_file_5, test_file_6, test_file_7],
+            data
+        ))
+        exists_files = list(map(lambda file: file.get('name'), exists_files))
 
         assert len(exists_files) == 7
         assert test_file_1 in exists_files

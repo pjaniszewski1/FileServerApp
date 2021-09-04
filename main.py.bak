@@ -1,5 +1,4 @@
 from __future__ import print_function
-from builtins import input
 import argparse
 import os
 import sys
@@ -24,10 +23,10 @@ def commandline_parser():
 def get_file_data(cwd):
     # type (str) -> dict
     print('Input filename (without extension):')
-    filename = eval(input())
+    filename = input()
 
     print('Check sign? y/n:')
-    is_signed = eval(input())
+    is_signed = input()
 
     if is_signed == 'y':
         data = FileServiceSigned(path=cwd).get_file_data(filename)
@@ -42,15 +41,15 @@ def get_file_data(cwd):
 def create_file(cwd):
     # type (str) -> dict
     print('Input content:')
-    content = eval(input())
+    content = input()
 
     print('Input security level (low, medium, high):')
-    security_level = eval(input())
+    security_level = input()
 
     assert security_level in ['low', 'medium', 'high'], 'Invalid security level'
 
     print('Sign file? y/n:')
-    is_signed = eval(input())
+    is_signed = input()
 
     if is_signed == 'y':
         data = FileServiceSigned(path=cwd).create_file(content, security_level)
@@ -66,7 +65,7 @@ def delete_file(cwd):
     # type (str) -> dict
     print('Input filename (without extension)')
 
-    filename = eval(input())
+    filename = input()
 
     data = FileService(path=cwd).delete_file(filename)
 
@@ -75,7 +74,7 @@ def delete_file(cwd):
 
 def change_dir(cwd):
     print('Input new working directory path:')
-    new_path = eval(input())
+    new_path = input()
 
     FileService(path=cwd).change_dir(new_path)
 
@@ -98,7 +97,7 @@ def main():
     while True:
         try:
             print('Input command:')
-            command = eval(input())
+            command = input()
 
             if command == 'list':
                 data = FileService(path=path).get_files()
