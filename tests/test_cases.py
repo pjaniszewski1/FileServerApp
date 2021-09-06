@@ -4,13 +4,17 @@ from builtins import object
 from collections import OrderedDict
 
 import pytest
+from aiohttp import web
+
 import server.file_service_no_class as FileServerNoClass
 import logging
 import os
+import json
 import server.utils as utils
 
 from server.crypto import HashAPI, AESCipher, RSACipher
 from server.file_service import FileService, FileServiceSigned
+from server.handler import Handler
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -71,11 +75,26 @@ def create_test_files():
         file_handler.write(data)
 
 
+@pytest.fixture
+def client(loop, aiohttp_client):
+    create_and_move_to_test_folder()
+    create_test_files()
+
+    handler = Handler(test_folder)
+    app = web.Application()
+    app.router.add_get('/', handler.handle)
+    app.router.add_get('/files/list', handler.get_files)
+    app.router.add_get('/files', handler.get_file_info)
+    app.router.add_post('/files', handler.create_file)
+    app.router.add_delete('file/{filename}', handler.delete_file)
+    app.router.add_post('/change_file_dir', handler.change_file_dir)
+
+    return loop.run_until_complete(aiohttp_client(app)), handler
+
+
 @pytest.fixture(scope='function')
 def prepare_data(request):
     logger.info('Prepare test data in database')
-    create_and_move_to_test_folder()
-    create_test_files()
 
     full_test_file_4 = '{}\{}'.format(test_folder, test_file_4)
     file_dict_4 = OrderedDict(
@@ -158,9 +177,36 @@ def teardown():
 
 
 class TestSuite(object):
-    def test_get_files(self, prepare_data):
+    async def test_connection(self, client):
+        client, handler = tuple(client)
+
+        logger.info('Test request. Method not allow')
+        resp = await client.put('/')
+        assert resp.status == 405
+        logger.info('Test passed')
+
         logger.info('Test request')
-        data = FileServerNoClass.get_files()
+        resp = await client.get('/')
+        assert resp.status == 200
+        result = json.loads(await resp.text())
+        assert result.get('status') == 'success'
+        logger.info('Test passed')
+
+    def test_get_files(self, client, prepare_data):
+        client, handler = tuple(client)
+
+        logger.info('Test request. Method not allowed.')
+        resp = await client.put('/files/list')
+        assert resp.status == 405
+        logger.info('Test passed')
+
+        logger.info('Test request')
+        resp = await client.get('/files/list')
+        assert resp.status == 200
+        result = json.loads(await resp.text())
+        assert result.get('status') == 'success'
+        data = result.get('data')
+
         exists_files = list([file for file in data if file.get('name') in [test_file_1, test_file_2, test_file_3, test_file_4, test_file_5, test_file_6, test_file_7]])
         exists_files = list([file.get('name') for file in exists_files])
 
@@ -176,38 +222,53 @@ class TestSuite(object):
 
         logger.info('Test passed')
 
-    def test_get_file_info(self, prepare_data):
-        logger.info('Test request. File exists. Security level low.')
+    def test_get_file_info(self, client, prepare_data):
+        client, handler = tuple(client)
         test_file_part = test_file_4.split('.')[0]
-        data = FileService(path=test_folder).get_file_data(test_file_part)
-        filename = data.get('name')
 
+        logger.info('Test request. Method not allowed')
+        resp = await client.put('/files?filename?={}&is_signed={}'.format(test_file_part, 'false'))
+        assert resp.status == 405
+        logger.info('Test passed')
+
+        logger.info('Test request. File exists. Security level low.')
+        resp = await client.get('/files?filename={}&is_signed={}'.format(test_file_part, 'false'))
+        assert resp.status == 200
+        result = json.loads(await resp.text())
+        assert result.get('status') == 'success'
+
+        filename = result.get('data').get('name')
         assert os.path.exists('{}/{}'.format(test_folder, filename))
         assert filename == test_file_4
 
-        content = data.get('content')
+        content = result.get('data').get('content')
         assert content == test_content
 
         logger.info('Test request. File exists. Security level medium.')
         test_file_part = test_file_6.split('.')[0]
-        data = FileService(path=test_folder).get_file_data(test_file_part)
-        filename = data.get('name')
+        resp = await client.get('/files?filename={}&is_signed={}'.format(test_file_part, 'true'))
+        assert resp.status == 200
+        result = json.loads(await resp.text())
+        assert result.get('status') == 'success'
 
+        filename = result.get('data').get('name')
         assert os.path.exists('{}/{}'.format(test_folder, filename))
         assert filename == test_file_6
-        content = data.get('content')
+        content = result.get('data').get('content')
         assert content == test_content
 
         logger.info('Test request. File exists. Security level high.')
         test_file_part = test_file_7.split('.')[0]
-        data = FileService(path=test_folder).get_file_data(test_file_part)
-        filename = data.get('name')
+        resp = await client.get('/files?filename={}&is_signed={}'.format(test_file_part, 'true'))
+        assert resp.status == 200
+        result = json.loads(await resp.text())
+        assert result.get('status') == 'success'
 
+        filename = result.get('data').get('name')
         assert os.path.exists('{}/{}'.format(test_folder, filename))
         assert filename == test_file_7
-        content = data.get('content')
+        content = result.get('data').get('content')
         assert content == test_content
-
 
         logger.info('Test request. File exists. Security level medium. Signatures are match')
         test_file_part = test_file_6.split('.')[0]
