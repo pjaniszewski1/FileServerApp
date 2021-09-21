@@ -4,6 +4,8 @@ from server.file_service import FileService, FileServiceSigned
 from aiohttp import web
 import json
 
+from server.users_sql import UsersSQLAPI
+
 
 class Handler:
     def __init__(self, path: str) -> None:
@@ -15,12 +17,14 @@ class Handler:
             'status': 'success'
         })
 
+    @UsersSQLAPI.authorized
     async def get_files(self, request: web.Request, *args, **kwargs) -> web.Response:
         return web.json_response(data={
             'status': 'success',
             'data': self.file_service.get_files()
         })
 
+    @UsersSQLAPI.authorized
     async def get_file_info(self, request: web.Request, *args, **kwargs) -> web.Response:
         try:
             filename = request.rel_url.query['filename']
@@ -33,7 +37,8 @@ class Handler:
             else:
                 file_service = self.file_service
 
-            result = await file_service.get_file_data_async(filename)
+            result = await file_service.get_file_data_async(filename, kwargs.get('user_id'))
+            result.pop('user_id')
             result['size'] = '{} bytes'.format(result['size'])
 
             return web.json_response(data={
@@ -47,6 +52,7 @@ class Handler:
         except KeyError as err:
             raise web.HTTPBadRequest(text='Parameter {} is not set'.format(err))
 
+    @UsersSQLAPI.authorized
     async def create_file(self, request: web.Request, *args, **kwargs) -> web.Response:
         result = ''
         stream = request.content
@@ -65,7 +71,8 @@ class Handler:
             else:
                 file_service = self.file_service
 
-            result = await file_service.create_file(data.get('content'), data.get('security_level'))
+            result = await file_service.create_file(data.get('content'), data.get('security_level'), kwargs.get('user_id'))
+            result.pop('user_id')
             result['size'] = '{} bytes'.format(result['size'])
 
             return web.json_response(data={
@@ -75,6 +82,7 @@ class Handler:
         except (AssertionError, ValueError) as err:
             raise web.HTTPBadRequest(text='{}'.format(err))
 
+    @UsersSQLAPI.authorized
     async def delete_file(self, request: web.Request, *args, **kwargs) -> web.Response:
         filename = request.match_info['filename']
 
@@ -86,6 +94,7 @@ class Handler:
         except AssertionError as err:
             raise web.HTTPBadRequest(text='{}'.format(err))
 
+    @UsersSQLAPI.authorized
     async def change_file_dir(self, request: web.Request, *args, **kwargs) -> web.Response:
         result = ''
         stream = request.content
@@ -108,3 +117,53 @@ class Handler:
             })
         except (AssertionError, ValueError) as err:
             raise web.HTTPBadRequest(text='{}'.format(err))
+
+    async def singup(self, request: web.Request, *args, **kwargs) -> web.Response:
+        result = ''
+        stream = request.content
+
+        while not stream.at_eof():
+            line = await stream.read()
+            result += line.decode('utf-8')
+
+        try:
+            data = json.loads(result)
+            UsersSQLAPI.signup(**data)
+            return web.json_response(data={
+                'status': 'success',
+                'message': 'User with email {} is successfully registered'.format(data.get('email'))
+            })
+        except (AssertionError, ValueError) as err:
+            raise web.HTTPBadRequest(text='{}'.format(err))
+
+    async def signin(self, request: web.Request, *args, **kwargs) -> web.Response:
+        result = ''
+        stream = request.content
+
+        while not stream.at_eof():
+            line = await stream.read()
+            result += line.decode('utf-8')
+
+        try:
+            data = json.loads(result)
+            return web.json_response(data={
+                'status': 'success',
+                'session_id': UsersSQLAPI.signin(**data),
+                'message': 'You successfully signed in the system'
+            })
+
+        except (AssertionError, ValueError) as err:
+            raise web.HTTPBadRequest(text='{}'.format(err))
+
+    async def logout(self, request: web.Request, *args, **kwargs) -> web.Response:
+        session_id = request.headers.get('X-Authorization')
+
+        if not session_id:
+            raise web.HTTPUnauthorized(text='Unauthorized request')
+
+        UsersSQLAPI.logout(session_id)
+
+        return web.json_response(data={
+            'status': 'success',
+            'message': 'You successfully logged out'
+        })

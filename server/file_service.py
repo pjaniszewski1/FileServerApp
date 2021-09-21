@@ -72,8 +72,9 @@ class FileService(object):
 
         return data
 
-    def get_file_data(self, filename):
-        # type (str) -> dict
+    def get_file_data(self, filename: str, user_id: int = None) -> Dict[str, str]:
+        assert user_id, 'User id is not set'
+
         short_filename = '{}.{}'.format(filename, self.extension)
         full_filename = '{}/{}'.format(self.path, short_filename)
 
@@ -86,9 +87,9 @@ class FileService(object):
         if not security_level or security_level == 'low':
             cipher = BaseCipher()
         elif security_level == 'medium':
-            cipher = AESCipher(self.path)
+            cipher = AESCipher(user_id, self.path)
         elif security_level == 'high':
-            cipher = RSACipher(self.path)
+            cipher = RSACipher(user_id, self.path)
         else:
             raise ValueError('Security level is invalid')
 
@@ -98,10 +99,13 @@ class FileService(object):
                 create_date=utils.convert_date(os.path.getctime(full_filename)),
                 edit_date=utils.convert_date(os.path.getmtime(full_filename)),
                 size=os.path.getsize(full_filename),
-                content=cipher.decrypt(file_handler, filename).decode('utf-8')
+                content=cipher.decrypt(file_handler, filename).decode('utf-8'),
+                user_id=user_id
             )
 
-    async def get_file_data_async(self, filename: str) -> Dict[str, str]:
+    async def get_file_data_async(self, filename: str, user_id: int = None) -> Dict[str, str]:
+        assert user_id, 'User id is not set'
+
         short_filename = '{}.{}'.format(filename, self.extension)
         full_filename = '{}/{}'.format(self.path, short_filename)
 
@@ -114,9 +118,9 @@ class FileService(object):
         if not security_level or security_level == 'low':
             cipher = BaseCipher()
         elif security_level == 'medium':
-            cipher = AESCipher(self.path)
+            cipher = AESCipher(user_id, self.path)
         elif security_level == 'high':
-            cipher = RSACipher(self.path)
+            cipher = RSACipher(user_id, self.path)
         else:
             raise ValueError('Security level is invalid')
 
@@ -126,11 +130,13 @@ class FileService(object):
                 create_date=utils.convert_date(os.path.getctime(full_filename)),
                 edit_date=utils.convert_date(os.path.getmtime(full_filename)),
                 size=os.path.getsize(full_filename),
-                content=cipher.decrypt(file_handler, filename).decode('utf-8')
+                content=cipher.decrypt(file_handler, filename).decode('utf-8'),
+                user_id=user_id
             )
 
-    async def create_file(self, content=None, security_level=None):
-        # type (str, str) -> dict
+    async def create_file(self, content: str = None, security_level: str = None, user_id: int = None) -> Dict[str, str]:
+        assert user_id, 'User id is not set'
+
         filename = '{}_{}.{}'.format(utils.generate_string(), security_level, self.extension)
         full_filename = '{}/{}'.format(self.path, filename)
         print(filename)
@@ -143,9 +149,9 @@ class FileService(object):
         if not security_level or security_level == 'low':
             cipher = BaseCipher()
         elif security_level == 'medium':
-            cipher = AESCipher(self.path)
+            cipher = AESCipher(user_id, self.path)
         elif security_level == 'high':
-            cipher = RSACipher(self.path)
+            cipher = RSACipher(user_id, self.path)
         else:
             raise ValueError('Security level is invalid')
 
@@ -158,7 +164,9 @@ class FileService(object):
             name=filename,
             create_date=utils.convert_date(os.path.getctime(full_filename)),
             size=os.path.getsize(full_filename),
-            content=content)
+            content=content,
+            user_id=user_id
+        )
 
     def delete_file(self, filename):
         # type (str) -> str
@@ -178,10 +186,8 @@ class FileService(object):
 
 
 class FileServiceSigned(FileService):
-    def get_file_data(self, filename):
-        # type (str) -> dict
-
-        result = super(FileServiceSigned, self).get_file_data(filename)
+    def get_file_data(self, filename: str, user_id: int = None) -> Dict[str, str]:
+        result = super(FileServiceSigned, self).get_file_data(filename, user_id)
         result_for_check = result
         result_for_check.pop('edit_date')
 
@@ -196,10 +202,8 @@ class FileServiceSigned(FileService):
 
         return result
 
-    async def get_file_data_async(self, filename: str) -> Dict[str, str]:
-        # type (str) -> dict
-
-        result = await super(FileServiceSigned, self).get_file_data_async(filename)
+    async def get_file_data_async(self, filename: str, user_id: int = None) -> Dict[str, str]:
+        result = await super(FileServiceSigned, self).get_file_data_async(filename, user_id)
         result_for_check = result
         result_for_check.pop('edit_date')
 
@@ -214,9 +218,8 @@ class FileServiceSigned(FileService):
 
         return result
 
-    async def create_file(self, content=None, security_level=None):
-        # type (str, str) -> dict
-        result = await super(FileServiceSigned, self).create_file(content, security_level)
+    async def create_file(self, content: str = None, security_level: str = None, user_id: int = None) -> Dict[str, str]:
+        result = await super(FileServiceSigned, self).create_file(content, security_level, user_id)
         signature = HashAPI.hash_md5('_'.join(list(str(x) for x in list(result.values()))))
         filename = '{}.{}'.format(result['name'].split('.')[0], 'md5')
         full_filename = '{}/{}'.format(self.path, filename)

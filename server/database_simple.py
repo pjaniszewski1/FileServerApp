@@ -28,39 +28,42 @@ class DataBase:
                 CREATE TABLE users
                 (
                     ID SERIAL PRIMARY KEY,
-                    CreatedDate DATE,
+                    CreatedDate TIMESTAMP,
                     Password TEXT,
                     EMail TEXT,
                     Name TEXT,
                     Surname TEXT,
-                    LastLoginDate DATE
+                    LastLoginDate TIMESTAMP
                 );
                 """
 
                 sessions_table = """
+                CREATE TABLE sessions
                 (
-                    CREATE TABLE sessions
                     ID SERIAL PRIMARY KEY,
-                    CreatedDate DATE,
+                    CreatedDate TIMESTAMP,
                     UUID TEXT,
-                    ExpirationDate DATE,
+                    ExpirationDate TIMESTAMP,
                     UserID INT REFERENCES users(ID)
                 )    
                 """
 
                 c = db.cursor()
+                c.execute('DROP TABLE IF EXISTS users CASCADE')
+                c.execute('DROP TABLE IF EXISTS sessions CASCADE')
+
                 c.execute(users_table)
                 c.execute(sessions_table)
                 db.commit()
 
                 columns = ('createddate', 'password', 'email', 'name', 'surname')
                 values = (datetime.strftime(datetime.now(), dt_format), 'qwerty', 'example@test.com', 'postgres', 'post')
-                c.execute(sql.SQL('INSERT INTO public.Users ({}) VALUES ({})').format(
-                    sql.SQL(', '.join(map(sql.Identifier, columns))),
-                    sql.SQL(', '.join(map(sql.Literal, values)))
+                c.execute(sql.SQL('INSERT INTO public."users" ({}) VALUES ({})').format(
+                    sql.SQL(', ').join(map(sql.Identifier, columns)),
+                    sql.SQL(', ').join(map(sql.Literal, values))
                 ))
 
         except psycopg2.OperationalError as e:
             print('oops')
             print(str(e.pgcode))
-            print(dir(e))
+            print(e)
