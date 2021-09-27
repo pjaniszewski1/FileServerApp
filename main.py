@@ -1,11 +1,13 @@
 from __future__ import print_function
+
 import argparse
 import logging
 import os
 import sys
+
 from aiohttp import web
 
-from server.database_simple import DataBase
+from server.database import DataBase
 from server.handler import Handler
 
 
@@ -28,7 +30,6 @@ def main():
     namespace = parser.parse_args(sys.argv[1:])
 
     db = DataBase()
-
     if namespace.init:
         db.init_system()
 
@@ -43,6 +44,14 @@ def main():
         web.post('/change_file_dir', handler.change_file_dir),
         web.post('/signup', handler.singup),
         web.post('/signin', handler.signin),
+        web.put('/method/{method_name}', handler.add_method),
+        web.delete('/method/{method_name}', handler.delete_method),
+        web.put('/role/{role_name}', handler.add_role),
+        web.delete('/role/{role_name}', handler.delete_role),
+        web.post('/add_method_to_role', handler.add_method_to_role),
+        web.post('/delete_method_from_role', handler.delete_method_from_role),
+        web.post('/change_shared_prop', handler.change_shared_prop),
+        web.post('/change_user_role', handler.change_user_role),
         web.get('/logout', handler.logout)
     ])
     logging.basicConfig(level=logging.INFO)

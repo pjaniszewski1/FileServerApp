@@ -1,7 +1,8 @@
 from __future__ import print_function
-from builtins import bytes
+
 import os
 import sys
+from builtins import bytes
 
 import server.utils as utils
 

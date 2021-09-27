@@ -1,7 +1,8 @@
-import psycopg2
-import psycopg2.sql as sql
 import os
 from datetime import datetime
+
+import psycopg2
+import psycopg2.sql as sql
 
 dt_format = os.environ['DATE_FORMAT']
 

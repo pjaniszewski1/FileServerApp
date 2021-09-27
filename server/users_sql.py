@@ -1,12 +1,14 @@
-import re
 import os
-import psycopg2
-from psycopg2.extras import DictCursor
-import psycopg2.sql as sql
+import re
 from contextlib import closing
 from datetime import datetime, timedelta
+
+import psycopg2
+import psycopg2.sql as sql
 from aiohttp import web
+from psycopg2.extras import DictCursor
 from uuid import uuid4
+
 from server.crypto import HashAPI
 
 EMAIL_REGEX = re.compile(r'[\w._%+-]+@[\w.-]+\.[A-Za-z]{2,}$')

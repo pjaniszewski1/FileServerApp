@@ -1,6 +1,8 @@
-import server
-from setuptools import setup, find_packages
 from os.path import join, dirname
+
+from setuptools import setup, find_packages
+
+import server
 
 setup(
     name='FileServer',

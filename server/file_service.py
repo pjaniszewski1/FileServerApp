@@ -1,15 +1,15 @@
-from __future__ import print_function
 from __future__ import absolute_import
-from builtins import bytes
-from builtins import str
-from builtins import object
+from __future__ import print_function
+
 import os
+from builtins import bytes
+from builtins import object
+from builtins import str
 from collections import OrderedDict
 from typing import Dict
 
-from . import utils
-
 from server.crypto import HashAPI, BaseCipher, AESCipher, RSACipher
+from . import utils
 
 
 class FileService(object):

@@ -1,11 +1,12 @@
 from __future__ import absolute_import
-from builtins import object
+
 import hashlib
 import os
-from Crypto.PublicKey import RSA
-from Crypto.Cipher import AES, PKCS1_OAEP
-from Crypto.Random import get_random_bytes
+from builtins import object
 
+from Crypto.Cipher import AES, PKCS1_OAEP
+from Crypto.PublicKey import RSA
+from Crypto.Random import get_random_bytes
 
 key_folder = os.environ['KEY_DIR']
 

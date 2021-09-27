@@ -1,9 +1,19 @@
-from builtins import range
-import string
 import random
+import string
+from builtins import range
 from datetime import datetime
 
 string_length = 8
+
+
+class SingletonMeta(type):
+    __instance = None
+
+    def __call__(cls):
+        if not isinstance(cls.__instance, cls):
+            cls.__instance = super().__call__()
+
+        return cls.__instance
 
 
 def convert_date(timestamp):

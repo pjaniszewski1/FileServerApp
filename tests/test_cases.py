@@ -1,19 +1,16 @@
+import json
+import logging
+import os
 from builtins import bytes
-from builtins import str
 from builtins import object
+from builtins import str
 from collections import OrderedDict
 
 import pytest
 from aiohttp import web
 
-import server.file_service_no_class as FileServerNoClass
-import logging
-import os
-import json
 import server.utils as utils
-
 from server.crypto import HashAPI, AESCipher, RSACipher
-from server.file_service import FileService, FileServiceSigned
 from server.handler import Handler
 
 logger = logging.getLogger(__name__)

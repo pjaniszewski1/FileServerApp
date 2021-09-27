@@ -1,10 +1,11 @@
+import json
 from distutils.util import strtobool
 
-from server.file_service import FileService, FileServiceSigned
 from aiohttp import web
-import json
 
-from server.users_sql import UsersSQLAPI
+from server.file_service import FileService, FileServiceSigned
+from server.role_model import RoleModel
+from server.users import UsersAPI
 
 
 class Handler:
@@ -17,14 +18,16 @@ class Handler:
             'status': 'success'
         })
 
-    @UsersSQLAPI.authorized
+    @UsersAPI.authorized
+    @RoleModel.role_model
     async def get_files(self, request: web.Request, *args, **kwargs) -> web.Response:
         return web.json_response(data={
             'status': 'success',
             'data': self.file_service.get_files()
         })
 
-    @UsersSQLAPI.authorized
+    @UsersAPI.authorized
+    @RoleModel.role_model
     async def get_file_info(self, request: web.Request, *args, **kwargs) -> web.Response:
         try:
             filename = request.rel_url.query['filename']
@@ -52,7 +55,8 @@ class Handler:
         except KeyError as err:
             raise web.HTTPBadRequest(text='Parameter {} is not set'.format(err))
 
-    @UsersSQLAPI.authorized
+    @UsersAPI.authorized
+    @RoleModel.role_model
     async def create_file(self, request: web.Request, *args, **kwargs) -> web.Response:
         result = ''
         stream = request.content
@@ -82,7 +86,8 @@ class Handler:
         except (AssertionError, ValueError) as err:
             raise web.HTTPBadRequest(text='{}'.format(err))
 
-    @UsersSQLAPI.authorized
+    @UsersAPI.authorized
+    @RoleModel.role_model
     async def delete_file(self, request: web.Request, *args, **kwargs) -> web.Response:
         filename = request.match_info['filename']
 
@@ -94,7 +99,8 @@ class Handler:
         except AssertionError as err:
             raise web.HTTPBadRequest(text='{}'.format(err))
 
-    @UsersSQLAPI.authorized
+    @UsersAPI.authorized
+    @RoleModel.role_model
     async def change_file_dir(self, request: web.Request, *args, **kwargs) -> web.Response:
         result = ''
         stream = request.content
@@ -128,7 +134,7 @@ class Handler:
 
         try:
             data = json.loads(result)
-            UsersSQLAPI.signup(**data)
+            UsersAPI.signup(**data)
             return web.json_response(data={
                 'status': 'success',
                 'message': 'User with email {} is successfully registered'.format(data.get('email'))
@@ -148,7 +154,7 @@ class Handler:
             data = json.loads(result)
             return web.json_response(data={
                 'status': 'success',
-                'session_id': UsersSQLAPI.signin(**data),
+                'session_id': UsersAPI.signin(**data),
                 'message': 'You successfully signed in the system'
             })
 
@@ -161,9 +167,156 @@ class Handler:
         if not session_id:
             raise web.HTTPUnauthorized(text='Unauthorized request')
 
-        UsersSQLAPI.logout(session_id)
+        UsersAPI.logout(session_id)
 
         return web.json_response(data={
             'status': 'success',
             'message': 'You successfully logged out'
         })
+
+    @UsersAPI.authorized
+    @RoleModel.role_model
+    async def add_method(self, request: web.Request, *args, **kwargs) -> web.Response:
+        method_name = request.match_info['method_name']
+
+        try:
+            RoleModel.add_method(method_name)
+            return web.json_response(data={
+                'status': 'success',
+                'message': 'You successfully added method {}'.format(method_name),
+            })
+
+        except AssertionError as err:
+            raise web.HTTPBadRequest(text='{}'.format(err))
+
+    @UsersAPI.authorized
+    @RoleModel.role_model
+    async def delete_method(self, request: web.Request, *args, **kwargs) -> web.Response:
+        method_name = request.match_info['method_name']
+
+        try:
+            RoleModel.delete_method(method_name)
+            return web.json_response(data={
+                'status': 'success',
+                'message': 'You successfully deleted method {}'.format(method_name),
+            })
+
+        except AssertionError as err:
+            raise web.HTTPBadRequest(text='{}'.format(err))
+
+    @UsersAPI.authorized
+    @RoleModel.role_model
+    async def add_role(self, request: web.Request, *args, **kwargs) -> web.Response:
+        role_name = request.match_info['role_name']
+
+        try:
+            RoleModel.add_role(role_name)
+            return web.json_response(data={
+                'status': 'success',
+                'message': 'You successfully added role {}'.format(role_name),
+            })
+
+        except AssertionError as err:
+            raise web.HTTPBadRequest(text='{}'.format(err))
+
+    @UsersAPI.authorized
+    @RoleModel.role_model
+    async def delete_role(self, request: web.Request, *args, **kwargs) -> web.Response:
+        role_name = request.match_info['role_name']
+
+        try:
+            RoleModel.delete_role(role_name)
+            return web.json_response(data={
+                'status': 'success',
+                'message': 'You successfully deleted role {}'.format(role_name),
+            })
+
+        except AssertionError as err:
+            raise web.HTTPBadRequest(text='{}'.format(err))
+
+    @UsersAPI.authorized
+    @RoleModel.role_model
+    async def add_method_to_role(self, request: web.Request, *args, **kwargs) -> web.Response:
+        result = ''
+        stream = request.content
+
+        while not stream.at_eof():
+            line = await stream.read()
+            result += line.decode('utf-8')
+
+        try:
+            data = json.loads(result)
+            RoleModel.add_method_to_role(**data)
+            return web.json_response(data={
+                'status': 'success',
+                'message': 'You successfully added method {} to role {}'.format(data.get('method'), data.get('role')),
+            })
+
+        except (AssertionError, ValueError) as err:
+            raise web.HTTPBadRequest(text='{}'.format(err))
+
+    @UsersAPI.authorized
+    @RoleModel.role_model
+    async def delete_method_from_role(self, request: web.Request, *args, **kwargs) -> web.Response:
+        result = ''
+        stream = request.content
+
+        while not stream.at_eof():
+            line = await stream.read()
+            result += line.decode('utf-8')
+
+        try:
+            data = json.loads(result)
+            RoleModel.delete_method_from_role(**data)
+            return web.json_response(data={
+                'status': 'success',
+                'message': 'You successfully deleted method {} from role {}'.format(
+                    data.get('method'), data.get('role')),
+            })
+
+        except (AssertionError, ValueError) as err:
+            raise web.HTTPBadRequest(text='{}'.format(err))
+
+    @UsersAPI.authorized
+    @RoleModel.role_model
+    async def change_shared_prop(self, request: web.Request, *args, **kwargs) -> web.Response:
+        result = ''
+        stream = request.content
+
+        while not stream.at_eof():
+            line = await stream.read()
+            result += line.decode('utf-8')
+
+        try:
+            data = json.loads(result)
+            RoleModel.change_shared_prop(**data)
+            return web.json_response(data={
+                'status': 'success',
+                'message': 'You successfully changed shared property of method {}. Property is {}'.format(
+                    data.get('method'), 'enabled' if data.get('value') else 'disabled'),
+            })
+
+        except (AssertionError, ValueError) as err:
+            raise web.HTTPBadRequest(text='{}'.format(err))
+
+    @UsersAPI.authorized
+    @RoleModel.role_model
+    async def change_user_role(self, request: web.Request, *args, **kwargs) -> web.Response:
+        result = ''
+        stream = request.content
+
+        while not stream.at_eof():
+            line = await stream.read()
+            result += line.decode('utf-8')
+
+        try:
+            data = json.loads(result)
+            RoleModel.change_user_role(**data)
+            return web.json_response(data={
+                'status': 'success',
+                'message': 'You successfully changed role of user with email {}. New role is {}'.format(
+                    data.get('email'), data.get('role')),
+            })
+
+        except (AssertionError, ValueError) as err:
+            raise web.HTTPBadRequest(text='{}'.format(err))
